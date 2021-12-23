@@ -3,7 +3,7 @@
 
 I love Hamilton the Musical, I was lucky and able to see it from the last free seat at the SFO performance in 2019.
 
-image::hamilton-sfo.jpg[{half-width}]
+image::hamilton-sfo.jpg[width=400]
 
 Like https://twitter.com/sxywu[Shirley Wu^] I've been listening to it on repeat since forever, we even got Disney+ and a projector canvas to watch it when it came out.
 
