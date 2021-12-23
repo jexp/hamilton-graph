@@ -36,6 +36,23 @@ We have
 * `HAS` a `Theme`, which
 * is `PART_OF` a `Category`
 
+== Indexes and Constraints
+
+For faster lookups to connect our data, let's create some constraints and indexes first.
+
+[source,cypher]
+----
+create constraint on (s:Singer) assert s.id is unique;
+create constraint on (l:Lines) assert l.id is unique;
+create constraint on (s:Song) assert s.id is unique;
+create constraint on (t:Theme) assert t.id is unique;
+create constraint on (c:Category) assert c.name is unique;
+create constraint on (w:Word) assert w.word is unique;
+
+create index on :Singer(name);
+create index on :Song(title);
+----
+
 == Singers
 
 Let's load the data one by one, starting with the Singers.
