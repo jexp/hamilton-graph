@@ -247,18 +247,20 @@ When loading the file, the most annoying part is splitting the string to find th
 
 [source,cypher]
 ----
-call apoc.load.json('https://raw.githubusercontent.com/sxywu/hamilton/master/src/data/words.json') YIELD value
+:auto call apoc.load.json('https://raw.githubusercontent.com/sxywu/hamilton/master/src/data/words.json') YIELD value
 UNWIND keys(value) AS key
 WITH key, value[key] AS data
-
-MERGE (w:Word {word:key})
-WITH *
-UNWIND data as entries
-WITH w, split(entries, "/") as parts
-WITH w, parts[1] as lines, parts[0] as line
-WITH *, toInteger(split(line,':')[1])-toInteger(split(split(lines,':')[1],'-')[0]) as idx
-MATCH (l:Lines {id:lines})
-MERGE (w)<-[:CONTAINS {pos:line, idx:idx}]-(l);
+CALL { WITH key, data
+    MERGE (w:Word {word:key})
+    WITH *
+    UNWIND data as entries
+    WITH w, split(entries, "/") as parts
+    WITH w, parts[1] as lines, parts[0] as line
+    WITH *, toInteger(split(line,':')[1])-toInteger(split(split(lines,':')[1],'-')[0]) as idx
+    MATCH (l:Lines {id:lines})
+    MERGE (w)<-[:CONTAINS {pos:line, idx:idx}]-(l)
+} IN TRANSACTIONS OF 500 ROWS
+RETURN count(*);
 ----
 
 Now we can query for Words within lines of songs
