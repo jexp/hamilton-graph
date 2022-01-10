@@ -163,6 +163,45 @@ FOREACH (id IN [id IN directed WHERE id <> ""] |
 RETURN count(*);
 ----
 
+In a memory restricted environment like AuraDB Free, we need to process the data in chunks:
+
+All the JSON and String data takes too much of the available, transactional memory.
+
+Just increase the `SKIP` value from 0 all the way to 1400 in steps of 200.
+
+[source,cypher]
+----
+:auto call apoc.load.json('https://raw.githubusercontent.com/sxywu/hamilton/master/src/data/lines.json') YIELD value
+UNWIND keys(value) AS key
+WITH key, value[key] AS data
+SKIP 0 LIMIT 200
+
+call {
+with key, data
+WITH key, split(key,':')[0] as song, split(key,':')[1] as lines, data[1][0] as singers, data[1][1] as excluded, data[1][2] as directed, data[2] as text, data[3] as count
+
+MATCH (s:Song {id:song})
+MERGE (l:Lines {id:key})
+ON CREATE SET l.text = text, l.count = count, l.lines = lines
+MERGE (l)-[:OF_SONG]->(s)
+
+FOREACH (id IN [id IN singers WHERE id <> ""] |
+    MERGE (p:Singer {id:id})
+    MERGE (p)-[:SINGS]->(l)
+    MERGE (p)-[:PERFORMS]->(s)
+)
+FOREACH (id IN [id IN excluded WHERE id <> ""] |
+    MERGE (p:Singer {id:id})
+    MERGE (p)-[:EXCLUDED]->(l)
+)
+FOREACH (id IN [id IN directed WHERE id <> ""] |
+    MERGE (p:Singer {id:id})
+    MERGE (l)-[:DIRECTED]->(p)
+)
+} in transactions of 100 rows
+RETURN count(*);
+----
+
 Now we can have our first graph query, that shows us who sings which songs.
 
 [source,cypher]
