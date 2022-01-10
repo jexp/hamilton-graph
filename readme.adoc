@@ -415,3 +415,166 @@ RETURN path
 ----
 
 image::hamilton-washington.png[]
+
+== Timeline
+
+What timeframe is a character active in the story
+
+
+[source,cypher]
+----
+MATCH (p:Singer)-[r:SINGS]->()-[:OF_SONG]->(s:Song)
+// exlude the first and last song where everyone sings
+WHERE NOT s.id IN ["1","46"]
+// order numerically
+WITH DISTINCT p.name as name, s.id as song ORDER BY toInteger(song) ASC
+// collect all songs of a character into a list
+WITH name, collect(song) as songs
+// first and last entry of the list
+RETURN name, songs[0]+"-"+songs[-1] as time
+// sorted by frequency and first appearance
+ORDER BY size(songs) DESC, toInteger(songs[0]) asc
+----
+
+----
+╒══════════════════════╤═══════╕
+│"name"                │"time" │
+╞══════════════════════╪═══════╡
+│"Alexander Hamilton"  │"2-45" │
+├──────────────────────┼───────┤
+│"Company"             │"2-45" │
+├──────────────────────┼───────┤
+│"Aaron Burr"          │"2-45" │
+├──────────────────────┼───────┤
+│"George Washington"   │"4-32" │
+├──────────────────────┼───────┤
+│"John Laurens"        │"2-23" │
+├──────────────────────┼───────┤
+│"Eliza Schuyler"      │"5-44" │
+├──────────────────────┼───────┤
+│"Men"                 │"5-45" │
+├──────────────────────┼───────┤
+│"Hercules Mulligan"   │"2-23" │
+├──────────────────────┼───────┤
+│"Marquis de Lafayette"│"2-23" │
+├──────────────────────┼───────┤
+│"Angelica Schuyler"   │"5-45" │
+├──────────────────────┼───────┤
+│"Thomas Jefferson"    │"24-42"│
+├──────────────────────┼───────┤
+│"James Madison"       │"24-42"│
+├──────────────────────┼───────┤
+│"Women"               │"5-42" │
+├──────────────────────┼───────┤
+│"Phillip Hamilton"    │"26-45"│
+├──────────────────────┼───────┤
+│"King George III"     │"7-33" │
+├──────────────────────┼───────┤
+│"Charles Lee"         │"14-15"│
+├──────────────────────┼───────┤
+│"Peggy Schuyler"      │"5-5"  │
+├──────────────────────┼───────┤
+│"Samuel Seabury"      │"6-6"  │
+├──────────────────────┼───────┤
+│"Maria Reynolds"      │"27-27"│
+├──────────────────────┼───────┤
+│"James Reynolds"      │"27-27"│
+├──────────────────────┼───────┤
+│"George Eacker"       │"39-39"│
+└──────────────────────┴───────┘
+----
+
+== Words
+
+Frequency of words used
+
+[source,cypher]
+----
+MATCH (w:Word)
+WHERE size(w.word) > 4
+RETURN w.word, size((w)<-[:CONTAINS]-()) as freq
+order by freq desc LIMIT 20
+----
+
+----
+╒═══════════╤══════╕
+│"w.word"   │"freq"│
+╞═══════════╪══════╡
+│"where"    │82    │
+├───────────┼──────┤
+│"don’t"    │76    │
+├───────────┼──────┤
+│"hamilton" │68    │
+├───────────┼──────┤
+│"you’re"   │68    │
+├───────────┼──────┤
+│"never"    │56    │
+├───────────┼──────┤
+│"alexander"│49    │
+├───────────┼──────┤
+│"right"    │40    │
+├───────────┼──────┤
+│"gonna"    │37    │
+├───────────┼──────┤
+│"would"    │36    │
+├───────────┼──────┤
+│"world"    │35    │
+----
+
+Which words are related to which themes.
+
+[source,cypher]
+----
+MATCH (w:Word)<-[:CONTAINS]-(l)-[:HAS]->(t)-[:PART_OF]->(c)
+WHERE size(w.word) > 4
+RETURN w.word, c.name, count(*) AS freq
+ORDER BY freq DESC LIMIT 50;
+----
+
+
+----
+╒════════════╤═══════════════╤══════╕
+│"w.word"    │"c.name"       │"freq"│
+╞════════════╪═══════════════╪══════╡
+│"enough"    │"Contentment"  │104   │
+├────────────┼───────────────┼──────┤
+│"where"     │"Ambition"     │102   │
+├────────────┼───────────────┼──────┤
+│"would"     │"Contentment"  │74    │
+├────────────┼───────────────┼──────┤
+│"could"     │"Contentment"  │57    │
+├────────────┼───────────────┼──────┤
+│"satisfied" │"Contentment"  │54    │
+├────────────┼───────────────┼──────┤
+│"happens"   │"Ambition"     │50    │
+├────────────┼───────────────┼──────┤
+│"where"     │"Contentment"  │47    │
+├────────────┼───────────────┼──────┤
+│"alive"     │"Contentment"  │47    │
+├────────────┼───────────────┼──────┤
+│"happened"  │"Ambition"     │46    │
+├────────────┼───────────────┼──────┤
+│"don’t"     │"Contentment"  │37    │
+├────────────┼───────────────┼──────┤
+│"throwing"  │"Ambition"     │34    │
+├────────────┼───────────────┼──────┤
+│"enough"    │"Legacy"       │28    │
+├────────────┼───────────────┼──────┤
+│"story"     │"Legacy"       │27    │
+├────────────┼───────────────┼──────┤
+│"helpless"  │"Personality"  │26    │
+├────────────┼───────────────┼──────┤
+│"world"     │"Legacy"       │25    │
+├────────────┼───────────────┼──────┤
+│"you’re"    │"Contentment"  │25    │
+├────────────┼───────────────┼──────┤
+│"other"     │"Ambition"     │25    │
+├────────────┼───────────────┼──────┤
+│"never"     │"Contentment"  │23    │
+├────────────┼───────────────┼──────┤
+│"wrote"     │"Death"        │22    │
+├────────────┼───────────────┼──────┤
+│"wanna"     │"Ambition"     │21    │
+├────────────┼───────────────┼──────┤
+│"running"   │"Death"        │20    │
+----
